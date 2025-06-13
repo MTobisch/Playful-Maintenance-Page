@@ -1,18 +1,16 @@
 import * as css from "./gridNode.module.css";
 
+const brightnessPercentMin = 1;
+const brightnessPercentMax = 100;
+const brightnessInertia = 10; // The higher, the slower brighness changes
+const velocityMin = -10;
+const velocityMax = 10;
+
 export class GridNode {
   element: HTMLElement;
-  hovered: boolean = false;
-  // Brightness
-  brightnessPercentMin = 2;
-  brightnessPercentMax = 15;
-  brightnessPercent = this.brightnessPercentMin;
-  brightnessInertia = 30; // The higher, the slower brighness changes
-  // Velocity
-  velocityMin = -1;
-  velocityMax = 1;
-  velocity: number = this.velocityMin;
-  velocityDecay = -0.001;
+  hovered = false;
+  brightnessPercent = brightnessPercentMin;
+  velocity = 0;
 
   constructor(
     public index: number,
@@ -47,21 +45,22 @@ export class GridNode {
 
   tick(deltaTime: number) {
     if (this.index === 100) {
-      console.log(this.velocity, this.brightnessPercent);
+      console.log(
+        Math.floor(this.brightnessPercent * 10000) / 10000,
+        Math.floor(this.velocity * 10000) / 10000
+      );
     }
 
     if (!this.hovered) {
       // Update brightnessPercent
-      this.brightnessPercent +=
-        (deltaTime * this.velocity) / this.brightnessInertia;
-      if (this.brightnessPercent > this.brightnessPercentMax)
-        this.brightnessPercent = this.brightnessPercentMax;
-      if (this.brightnessPercent < this.brightnessPercentMin)
-        this.brightnessPercent = this.brightnessPercentMin;
+      this.brightnessPercent += (deltaTime * this.velocity) / brightnessInertia;
+      if (this.brightnessPercent > brightnessPercentMax) {
+        this.brightnessPercent = brightnessPercentMax;
+      }
+      if (this.brightnessPercent < brightnessPercentMin) {
+        this.brightnessPercent = brightnessPercentMin;
+      }
       this.updateBrightness();
-
-      // Decrease velocity over time
-      this.addVelocity(this.velocityDecay * deltaTime);
     }
   }
 
@@ -71,7 +70,7 @@ export class GridNode {
 
   addVelocity(value: number) {
     this.velocity += value;
-    if (this.velocity > this.velocityMax) this.velocity = this.velocityMax;
-    if (this.velocity < this.velocityMin) this.velocity = this.velocityMin;
+    if (this.velocity > velocityMax) this.velocity = velocityMax;
+    if (this.velocity < velocityMin) this.velocity = velocityMin;
   }
 }
