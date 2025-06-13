@@ -10,8 +10,8 @@ gridElement.classList.add(css.grid);
 let currentNodes: GridNode[] = [];
 let currentShockwaves: GridShockwave[] = [];
 const tickInterval = 0;
-const noiseInterval = 10;
-const hotspotInterval = 2000;
+const noiseInterval = 50;
+const hotspotInterval = 1000;
 
 // Noise
 const minDesiredNoiseBrightness = 1;
@@ -39,7 +39,7 @@ export function handleGridEvents() {
           y: event.clientY,
         },
         currentNodes,
-        3,
+        30,
         500
       )
     );
@@ -56,7 +56,7 @@ export function handleGridEvents() {
           y: event.clientY,
         },
         currentNodes,
-        0.5,
+        1,
         50
       )
     );
@@ -154,16 +154,18 @@ export function updateNoise() {
     if (gridNode.brightnessPercent >= maxDesiredNoiseBrightness) {
       const overshoot = gridNode.brightnessPercent - minDesiredNoiseBrightness;
       velocityDelta = Math.random() - 1;
-      velocityDelta *= 0.03 * overshoot; // Correction speed is dependant on amount of overshoot
+      velocityDelta *= 1 * Math.min(1, overshoot); // Correction speed is dependant on amount of overshoot
+      velocityDelta = velocityDelta - gridNode.velocity;
     } else if (gridNode.brightnessPercent <= minDesiredNoiseBrightness) {
       const undershoot = maxDesiredNoiseBrightness - gridNode.brightnessPercent;
       velocityDelta = Math.random();
-      velocityDelta *= 0.01 * undershoot;
+      velocityDelta *= 0.1 * Math.min(1, undershoot);
+      velocityDelta = velocityDelta - gridNode.velocity;
       // In inside desired noise brightness range, randomize brightness change delate according to hotspots
     } else {
       const noiseStrength = getNoiseStrengthForPosition(gridNode.x, gridNode.y);
       velocityDelta = Math.random() * noiseStrength * 2 - 1;
-      velocityDelta *= 0.01;
+      velocityDelta *= 0.1;
     }
 
     gridNode.addVelocity(velocityDelta);
@@ -186,7 +188,7 @@ function shuffleHotspots() {
   }
 
   noiseHotspotsInfluenceDistance = Math.floor(
-    (document.body.clientWidth * document.body.clientHeight) / 2500
+    (document.body.clientWidth * document.body.clientHeight) / 1500
   );
 }
 
