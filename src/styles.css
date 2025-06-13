@@ -16,16 +16,100 @@ body {
   left: 0px;
   width: 100%;
   height: 100%;
-  background-color: rgb(5 12 22);
-  background: radial-gradient(circle, rgb(23 46 79) 0%, rgb(5 12 22) 80%);
+  background-color: #03080f;
+  background: radial-gradient(circle, #172e4f 0%, #03080f 80%);
 }
 
 .hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   z-index: 1000;
-  color: white;
-  font-size: 25px;
-  font-family: monospace;
+  pointer-events: none;
 }
 
+  .hero-image {
+    position: relative;
+    height: 80px;
+    margin: 0px 0px 25px 0px;
+
+    @media (width >= 600px) {
+      height: 100px;
+    }
+
+    @media (width >= 960px) {
+      height: 110px;
+      margin: 0px 0px 35px 0px;
+    }
+  }
+
+    @keyframes spin { 
+        100% {
+          transform:rotate(360deg); 
+        } 
+    }
+
+    .cog-1 {
+      position: absolute;
+      left: -75px;
+      height: 80px;
+      animation: spin 10s linear infinite;
+
+      @media (width >= 600px) {
+        left: -90px;
+        height: 100px;
+      }
+
+      @media (width >= 960px) {
+        left: -100px;
+        height: 110px;
+      }
+    }
+
+    .cog-2 {
+      position: absolute;
+      top: -20px;
+      left: -0px;
+      height: 50px;
+      animation: spin 10s linear infinite reverse;
+
+      @media (width >= 600px) {
+        top: -30px;
+        height: 60px;
+      }
+
+      @media (width >= 960px) {
+        height: 70px;
+      }
+    }
+
+      .cog {
+        fill: white;
+      }
+
   .hero-text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0px 20px;
+    color: white;
+    font-size: 16px;
+    font-family: monospace;
+    text-align: center;
+
+    @media (width >= 600px) {
+      font-size: 20px;
+    }
+
+    @media (width >= 960px) {
+      font-size: 25px;
+    }
+
+    >p {
+      margin: 0px;
+    }
+
+    > p:not(:last-of-type) {
+      margin: 0px 0px 10px 0px;
+    }
   }

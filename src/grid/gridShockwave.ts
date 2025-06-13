@@ -1,5 +1,4 @@
 import { GridNode } from "./gridNode";
-import * as css from "./gridNode.module.css";
 
 export class GridShockwave {
   radius: number = 0;
@@ -19,14 +18,19 @@ export class GridShockwave {
 
   tick(deltaTime: number) {
     if (this.radius > this.maxRadius) return;
+
+    // Increase shockwave radius on each tick
     this.radius += deltaTime * this.speed;
 
+    // Find new nodes touched by the shockwave
     for (const gridNode of this.gridNodes) {
       if (
         !this.touchedNodeIndexes.has(gridNode.index) &&
         this.pointInCircle(gridNode.x, gridNode.y)
       ) {
         this.touchedNodeIndexes.add(gridNode.index);
+
+        // Add velocity to touched node
         const completeness = this.radius / this.maxRadius;
         gridNode.addVelocity(
           this.strength * (0.8 + Math.abs(1 - completeness / 5))

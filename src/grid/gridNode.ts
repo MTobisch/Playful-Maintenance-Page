@@ -1,10 +1,10 @@
 import * as css from "./gridNode.module.css";
 
-const brightnessPercentMin = 1;
-const brightnessPercentMax = 100;
-const brightnessInertia = 10; // The higher, the slower brighness changes
-const velocityMin = -10;
-const velocityMax = 10;
+export const brightnessPercentMin = 1;
+export const brightnessPercentMax = 100;
+export const brightnessInertia = 10; // The higher, the slower brighness changes
+export const velocityMin = -10;
+export const velocityMax = 10;
 
 export class GridNode {
   element: HTMLElement;
@@ -30,7 +30,7 @@ export class GridNode {
   }
 
   tick(deltaTime: number) {
-    // Update brightnessPercent
+    // Update brightnessPercent according to current velocity
     this.brightnessPercent += (deltaTime * this.velocity) / brightnessInertia;
     if (this.brightnessPercent > brightnessPercentMax) {
       this.brightnessPercent = brightnessPercentMax;

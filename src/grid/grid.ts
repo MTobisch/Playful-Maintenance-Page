@@ -1,5 +1,5 @@
 import * as css from "./grid.module.css";
-import { GridNode } from "./gridNode";
+import { brightnessPercentMin, GridNode } from "./gridNode";
 import { GridShockwave } from "./gridShockwave";
 
 // Grid
@@ -10,8 +10,8 @@ gridElement.classList.add(css.grid);
 let currentNodes: GridNode[] = [];
 let currentShockwaves: GridShockwave[] = [];
 const tickInterval = 0;
-const noiseInterval = 50;
-const hotspotInterval = 1000;
+const noiseInterval = 20;
+const hotspotInterval = 2000;
 
 // Noise
 const minDesiredNoiseBrightness = 1;
@@ -27,6 +27,7 @@ export function init() {
 
   window.addEventListener("resize", (event) => {
     updateGridNodes();
+    shuffleHotspots();
   });
 }
 
@@ -39,16 +40,13 @@ export function handleGridEvents() {
           y: event.clientY,
         },
         currentNodes,
-        30,
+        3,
         500
       )
     );
   });
 
-  let mouseOverCounter = 0;
   gridElement.addEventListener("mousemove", (event) => {
-    //if (mouseOverCounter > 1) {
-    mouseOverCounter = 0;
     currentShockwaves.push(
       new GridShockwave(
         {
@@ -60,8 +58,6 @@ export function handleGridEvents() {
         50
       )
     );
-    //}
-    mouseOverCounter++;
   });
 }
 
@@ -73,8 +69,8 @@ export function updateGridNodes() {
   // Calculate nr of nodes for screen resolution
   const nodeWidth = 10;
   const nodeGap = 10;
-  const width = document.body.clientWidth;
-  const height = document.body.clientHeight;
+  const width = window.innerWidth;
+  const height = window.innerHeight;
   const hNodeCount = Math.floor(width / (nodeGap + nodeWidth));
   const vNodeCount = Math.floor(height / (nodeGap + nodeWidth));
 
@@ -91,7 +87,10 @@ export function updateGridNodes() {
         nodeGap + rowIndex * (nodeWidth + nodeGap),
         nodeWidth
       );
-      gridNode.brightnessPercent = minDesiredNoiseBrightness + 0.5;
+
+      // Set initial brightness at min possible value
+      gridNode.brightnessPercent =
+        Math.max(minDesiredNoiseBrightness, brightnessPercentMin) + 0.5;
 
       currentNodes.push(gridNode);
       gridElement.appendChild(gridNode.element);
@@ -106,12 +105,17 @@ export function initLoop() {
   let prevTime = performance.now();
 
   const animate = (currentTime: number) => {
-    const deltaTime = currentTime - prevTime;
+    let deltaTime = currentTime - prevTime;
     prevTime = currentTime;
+
+    // Loop pauses if tabbed out, causing deltaTime to grow large on next tick. Ignore those deltaTimes.
+    if (deltaTime > 100) deltaTime = 1;
+
     sinceLastTick += deltaTime;
     sinceLastNoiseChange += deltaTime;
     sinceLastNoiseHotspotsChange += deltaTime;
 
+    // Update grid nodes and shockwaves
     if (sinceLastTick > tickInterval) {
       sinceLastTick = 0;
       for (const gridNode of currentNodes) {
@@ -128,16 +132,16 @@ export function initLoop() {
       }
     }
 
-    // Update noise values regularly
+    // Update noise values
     if (sinceLastNoiseChange > noiseInterval) {
+      updateNoise(sinceLastNoiseChange);
       sinceLastNoiseChange = 0;
-      updateNoise();
     }
 
-    // Shuffle noise hotspots regularly
+    // Shuffle noise hotspots
     if (sinceLastNoiseHotspotsChange > hotspotInterval) {
-      sinceLastNoiseHotspotsChange = 0;
       shuffleHotspots();
+      sinceLastNoiseHotspotsChange = 0;
     }
 
     requestAnimationFrame(animate);
@@ -146,7 +150,12 @@ export function initLoop() {
   requestAnimationFrame(animate);
 }
 
-export function updateNoise() {
+/**
+ * Updates the brightness velocity values of all nodes to produce semi-random background noise
+ */
+export function updateNoise(deltaTime: number) {
+  deltaTime /= 1000;
+
   for (const [index, gridNode] of currentNodes.entries()) {
     let velocityDelta;
 
@@ -154,42 +163,44 @@ export function updateNoise() {
     if (gridNode.brightnessPercent >= maxDesiredNoiseBrightness) {
       const overshoot = gridNode.brightnessPercent - minDesiredNoiseBrightness;
       velocityDelta = Math.random() - 1;
-      velocityDelta *= 1 * Math.min(1, overshoot); // Correction speed is dependant on amount of overshoot
-      velocityDelta = velocityDelta - gridNode.velocity;
+      // Correction speed exponentially grows with amount of overshoot
+      velocityDelta *= 0.05 * Math.pow(Math.max(1, overshoot), 2);
     } else if (gridNode.brightnessPercent <= minDesiredNoiseBrightness) {
+      // If at or below min brightness and has velocity to go even lower, quickly slow down
+      if (gridNode.velocity < 0) gridNode.velocity /= 1.1;
       const undershoot = maxDesiredNoiseBrightness - gridNode.brightnessPercent;
       velocityDelta = Math.random();
-      velocityDelta *= 0.1 * Math.min(1, undershoot);
-      velocityDelta = velocityDelta - gridNode.velocity;
-      // In inside desired noise brightness range, randomize brightness change delate according to hotspots
+      velocityDelta *= 0.3 * Math.max(1, undershoot);
     } else {
+      // If inside desired noise brightness range, randomize brightness according to hotspots
       const noiseStrength = getNoiseStrengthForPosition(gridNode.x, gridNode.y);
       velocityDelta = Math.random() * noiseStrength * 2 - 1;
-      velocityDelta *= 0.1;
+      velocityDelta *= 0.7;
     }
 
+    velocityDelta *= deltaTime;
     gridNode.addVelocity(velocityDelta);
   }
 }
 
+/**
+ * Distributes a couple of noise hotspots across the screen
+ */
 function shuffleHotspots() {
-  const hotspotCount = Math.floor(
-    (document.body.clientWidth * document.body.clientHeight) / 200000
-  );
-  const totalWidth = document.body.clientWidth;
-  const totalHeight = document.body.clientHeight;
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+
+  const hotspotCount = Math.floor((width * height) / 200000);
 
   noiseHotspots = [];
   for (let i = 0; i < hotspotCount; i++) {
     noiseHotspots.push({
-      x: Math.random() * totalWidth,
-      y: Math.random() * totalHeight,
+      x: Math.random() * width,
+      y: Math.random() * height,
     });
   }
 
-  noiseHotspotsInfluenceDistance = Math.floor(
-    (document.body.clientWidth * document.body.clientHeight) / 1500
-  );
+  noiseHotspotsInfluenceDistance = Math.floor((width * height) / 1500);
 }
 
 /**
