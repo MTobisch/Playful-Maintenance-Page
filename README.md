@@ -1,4 +1,4 @@
-# Playful maintenance page
+# Playful Maintenance Page
 
 ![maintenance_page_preview_600](https://github.com/user-attachments/assets/51e7c993-4dc6-4996-8198-1af1f144270b)
 
@@ -11,6 +11,8 @@ Part of its design is that it consists of a single HTML file that can be easily 
 # How to use
 
 Simply [download the finished HTML file](https://github.com/MTobisch/playful-maintenance-page/blob/main/dist/index.html) and put it where you need it.
+
+The project uses a permissive CC license, so you are free to use and modify it however you like.
 
 # Building
 
@@ -37,3 +39,7 @@ npm run dev
 and start coding!
 
 # License
+
+CC0-1.0 license
+
+This means the project is fully in the Public Domain and you can do anything you want copy or modify it for any purpose without needing special copyright attribution.
