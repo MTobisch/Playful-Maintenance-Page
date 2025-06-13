@@ -1,3 +1,3 @@
-import { initializeGrid } from "./grid/grid";
+import { init } from "./grid/grid";
 
-initializeGrid();
+init();

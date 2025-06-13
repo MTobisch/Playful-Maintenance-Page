@@ -2,18 +2,32 @@ import * as css from "./grid.module.css";
 import { GridNode } from "./gridNode";
 import { GridShockwave } from "./gridShockwave";
 
+// Grid
 const gridElement = document.querySelector(".grid")! as HTMLElement;
 gridElement.classList.add(css.grid);
 
-const currentNodes: GridNode[] = [];
+// Loop
+let currentNodes: GridNode[] = [];
 let currentShockwaves: GridShockwave[] = [];
-const minDesiredNoiseBrightness = 1;
-const maxDesiredNoiseBrightness = 10;
+const tickInterval = 0;
+const noiseInterval = 10;
+const hotspotInterval = 2000;
 
-export function initializeGrid() {
+// Noise
+const minDesiredNoiseBrightness = 1;
+const maxDesiredNoiseBrightness = 20;
+let noiseHotspots: { x: number; y: number }[] = [];
+let noiseHotspotsInfluenceDistance = 0;
+shuffleHotspots();
+
+export function init() {
   updateGridNodes();
   handleGridEvents();
   initLoop();
+
+  window.addEventListener("resize", (event) => {
+    updateGridNodes();
+  });
 }
 
 export function handleGridEvents() {
@@ -42,8 +56,8 @@ export function handleGridEvents() {
           y: event.clientY,
         },
         currentNodes,
-        1,
-        80
+        0.5,
+        50
       )
     );
     //}
@@ -54,7 +68,7 @@ export function handleGridEvents() {
 export function updateGridNodes() {
   // Clear grid
   currentNodes.forEach((node) => node.remove());
-  currentNodes.length = 0;
+  currentNodes = [];
 
   // Calculate nr of nodes for screen resolution
   const nodeWidth = 10;
@@ -63,7 +77,6 @@ export function updateGridNodes() {
   const height = document.body.clientHeight;
   const hNodeCount = Math.floor(width / (nodeGap + nodeWidth));
   const vNodeCount = Math.floor(height / (nodeGap + nodeWidth));
-  const totalNodes = vNodeCount * hNodeCount;
 
   gridElement.style.gridTemplateColumns = `repeat(${hNodeCount}, 1fr)`;
   gridElement.style.gridTemplateRows = `repeat(${vNodeCount}, 1fr)`;
@@ -87,36 +100,44 @@ export function updateGridNodes() {
 }
 
 export function initLoop() {
-  let timeSinceLastTick = 0;
-  let timeSinceLastNoiseRandomize = 0;
+  let sinceLastTick = 0;
+  let sinceLastNoiseChange = 0;
+  let sinceLastNoiseHotspotsChange = 0;
   let prevTime = performance.now();
 
   const animate = (currentTime: number) => {
     const deltaTime = currentTime - prevTime;
     prevTime = currentTime;
-    timeSinceLastTick += deltaTime;
-    timeSinceLastNoiseRandomize += deltaTime;
+    sinceLastTick += deltaTime;
+    sinceLastNoiseChange += deltaTime;
+    sinceLastNoiseHotspotsChange += deltaTime;
 
-    //if (timeSinceLastTick > 10) {
-    timeSinceLastTick = 0;
-    for (const gridNode of currentNodes) {
-      gridNode.tick(deltaTime);
-    }
+    if (sinceLastTick > tickInterval) {
+      sinceLastTick = 0;
+      for (const gridNode of currentNodes) {
+        gridNode.tick(deltaTime);
+      }
 
-    for (const gridShockwave of currentShockwaves) {
-      gridShockwave.tick(deltaTime);
-      if (gridShockwave.radius > gridShockwave.maxRadius) {
-        currentShockwaves = currentShockwaves.filter(
-          (shockwave) => shockwave !== gridShockwave
-        );
+      for (const gridShockwave of currentShockwaves) {
+        gridShockwave.tick(deltaTime);
+        if (gridShockwave.isRemovable()) {
+          currentShockwaves = currentShockwaves.filter(
+            (shockwave) => shockwave !== gridShockwave
+          );
+        }
       }
     }
-    //}
 
-    // Shuffle noise regularly
-    if (timeSinceLastNoiseRandomize > 10) {
-      timeSinceLastNoiseRandomize = 0;
+    // Update noise values regularly
+    if (sinceLastNoiseChange > noiseInterval) {
+      sinceLastNoiseChange = 0;
       updateNoise();
+    }
+
+    // Shuffle noise hotspots regularly
+    if (sinceLastNoiseHotspotsChange > hotspotInterval) {
+      sinceLastNoiseHotspotsChange = 0;
+      shuffleHotspots();
     }
 
     requestAnimationFrame(animate);
@@ -126,36 +147,10 @@ export function initLoop() {
 }
 
 export function updateNoise() {
-  for (const gridNode of currentNodes) {
+  for (const [index, gridNode] of currentNodes.entries()) {
     let velocityDelta;
 
-    // Self-correct node brightness to fall in desired noise range over time
-    /*
-    if (gridNode.brightnessPercent >= maxDesiredNoiseBrightness) {
-      const overshoot = gridNode.brightnessPercent - minDesiredNoiseBrightness;
-      const overshootRange = 100 - minDesiredNoiseBrightness;
-      const overshootPercent = overshoot / overshootRange;
-      const maxCorrectionVelocity = -5;
-      const idealVelocityForOvershoot =
-        maxCorrectionVelocity * overshootPercent;
-      const correctionVelocity = idealVelocityForOvershoot - gridNode.velocity;
-      velocityDelta = correctionVelocity * 0.3;
-    } else if (gridNode.brightnessPercent <= minDesiredNoiseBrightness) {
-      const undershoot = maxDesiredNoiseBrightness - gridNode.brightnessPercent;
-      const undershootRange = maxDesiredNoiseBrightness;
-      const undershootPercent = undershoot / undershootRange;
-      const maxCorrectionVelocity = 5;
-      const idealVelocityForUndershoot =
-        maxCorrectionVelocity * undershootPercent;
-      const correctionVelocity = idealVelocityForUndershoot - gridNode.velocity;
-      velocityDelta = correctionVelocity * 0.3;
-    } else {
-      // Random number between -1 and 1
-      velocityDelta = Math.random() * 2 - 1;
-      velocityDelta *= 0.1;
-    }
-      */
-
+    // Correct noise over/undershoots and normalize brightness again over time
     if (gridNode.brightnessPercent >= maxDesiredNoiseBrightness) {
       const overshoot = gridNode.brightnessPercent - minDesiredNoiseBrightness;
       velocityDelta = Math.random() - 1;
@@ -163,12 +158,55 @@ export function updateNoise() {
     } else if (gridNode.brightnessPercent <= minDesiredNoiseBrightness) {
       const undershoot = maxDesiredNoiseBrightness - gridNode.brightnessPercent;
       velocityDelta = Math.random();
-      velocityDelta *= 0.033 * undershoot;
+      velocityDelta *= 0.01 * undershoot;
+      // In inside desired noise brightness range, randomize brightness change delate according to hotspots
     } else {
-      velocityDelta = Math.random() * 2 - 1;
+      const noiseStrength = getNoiseStrengthForPosition(gridNode.x, gridNode.y);
+      velocityDelta = Math.random() * noiseStrength * 2 - 1;
       velocityDelta *= 0.01;
     }
 
     gridNode.addVelocity(velocityDelta);
   }
+}
+
+function shuffleHotspots() {
+  const hotspotCount = Math.floor(
+    (document.body.clientWidth * document.body.clientHeight) / 200000
+  );
+  const totalWidth = document.body.clientWidth;
+  const totalHeight = document.body.clientHeight;
+
+  noiseHotspots = [];
+  for (let i = 0; i < hotspotCount; i++) {
+    noiseHotspots.push({
+      x: Math.random() * totalWidth,
+      y: Math.random() * totalHeight,
+    });
+  }
+
+  noiseHotspotsInfluenceDistance = Math.floor(
+    (document.body.clientWidth * document.body.clientHeight) / 2500
+  );
+}
+
+/**
+ * Returns an integer between 0 and 1 indicating the noise brightness at the position according to the current hotspots
+ */
+function getNoiseStrengthForPosition(x: number, y: number): number {
+  let closestDistance = Number.MAX_VALUE;
+
+  for (const hotspot of noiseHotspots) {
+    const distance = Math.sqrt(
+      Math.pow(x - hotspot.x, 2) + Math.pow(y - hotspot.y, 2)
+    );
+    if (distance < closestDistance) {
+      closestDistance = distance;
+    }
+  }
+
+  const normalizedDistance = Math.abs(
+    1 - Math.min(closestDistance / noiseHotspotsInfluenceDistance, 1)
+  );
+  return normalizedDistance;
 }

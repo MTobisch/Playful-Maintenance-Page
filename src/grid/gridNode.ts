@@ -8,7 +8,6 @@ const velocityMax = 10;
 
 export class GridNode {
   element: HTMLElement;
-  hovered = false;
   brightnessPercent = brightnessPercentMin;
   velocity = 0;
 
@@ -23,7 +22,6 @@ export class GridNode {
     this.element.style.width = `${width}px`;
     this.element.style.height = `${width}px`;
 
-    this.initListeners();
     this.updateBrightness();
   }
 
@@ -31,37 +29,16 @@ export class GridNode {
     this.element.remove();
   }
 
-  initListeners() {
-    this.element.addEventListener("mouseenter", (event) => {
-      this.hovered = true;
-      this.brightnessPercent = 100;
-      this.updateBrightness();
-    });
-
-    this.element.addEventListener("mouseleave", (event) => {
-      this.hovered = false;
-    });
-  }
-
   tick(deltaTime: number) {
-    if (this.index === 100) {
-      console.log(
-        Math.floor(this.brightnessPercent * 10000) / 10000,
-        Math.floor(this.velocity * 10000) / 10000
-      );
+    // Update brightnessPercent
+    this.brightnessPercent += (deltaTime * this.velocity) / brightnessInertia;
+    if (this.brightnessPercent > brightnessPercentMax) {
+      this.brightnessPercent = brightnessPercentMax;
     }
-
-    if (!this.hovered) {
-      // Update brightnessPercent
-      this.brightnessPercent += (deltaTime * this.velocity) / brightnessInertia;
-      if (this.brightnessPercent > brightnessPercentMax) {
-        this.brightnessPercent = brightnessPercentMax;
-      }
-      if (this.brightnessPercent < brightnessPercentMin) {
-        this.brightnessPercent = brightnessPercentMin;
-      }
-      this.updateBrightness();
+    if (this.brightnessPercent < brightnessPercentMin) {
+      this.brightnessPercent = brightnessPercentMin;
     }
+    this.updateBrightness();
   }
 
   updateBrightness() {

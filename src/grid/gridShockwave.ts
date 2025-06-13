@@ -13,10 +13,13 @@ export class GridShockwave {
     public maxRadius: number
   ) {}
 
+  isRemovable(): boolean {
+    return this.radius > this.maxRadius;
+  }
+
   tick(deltaTime: number) {
     if (this.radius > this.maxRadius) return;
     this.radius += deltaTime * this.speed;
-    console.log("impact", this.center, this.radius);
 
     for (const gridNode of this.gridNodes) {
       if (
