@@ -6,7 +6,7 @@ This is a simple, domain-agnostic maintenance page that can be used as drop-in f
 
 It provides some fun little interactivity when moving the mouse around and clicking the screen. This hopefully proves entertaining enough that visitors are distracted a bit from the fact that the site is currently unavailable.
 
-Part of its design is that it consists of a **single** HTML file that can be easily forwarded to by a reverse proxy or similar. You can can check out [a live preview](https://mtobisch.github.io/playful-maintenance-page/dist/) here.
+Part of its design is that it consists of a **single** HTML file that can be easily forwarded to by a reverse proxy or similar. You can can check out [a live preview](https://mtobisch.github.io/playful-maintenance-page/dist) here.
 
 # How to use
 
