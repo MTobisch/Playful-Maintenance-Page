@@ -96,8 +96,6 @@ export function updateGridNodes() {
       gridElement.appendChild(gridNode.element);
     }
   }
-
-  console.log(`hNodes: ${hNodeCount}, vNodes: ${vNodeCount}`);
 }
 
 export function initLoop() {
