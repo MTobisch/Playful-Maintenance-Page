@@ -1,3 +1,4 @@
+import { iTickable } from "../iTickable";
 import * as css from "./gridNode.module.css";
 
 export const brightnessPercentMin = 1;
@@ -6,7 +7,7 @@ export const brightnessInertia = 10; // The higher, the slower brighness changes
 export const velocityMin = -10;
 export const velocityMax = 10;
 
-export class GridNode {
+export class GridNode implements iTickable {
   element: HTMLElement;
   brightnessPercent = brightnessPercentMin;
   velocity = 0;
