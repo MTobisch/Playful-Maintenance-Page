@@ -82,13 +82,13 @@ export function updateGridNodes() {
   for (let rowIndex = 0; rowIndex < vNodeCount; rowIndex++) {
     for (let columnIndex = 0; columnIndex < hNodeCount; columnIndex++) {
       const gridNode = new GridNode(
-        columnIndex * hNodeCount + rowIndex,
+        rowIndex * hNodeCount + columnIndex,
         nodeGap + columnIndex * (nodeWidth + nodeGap),
         nodeGap + rowIndex * (nodeWidth + nodeGap),
         nodeWidth
       );
 
-      // Set initial brightness at min possible value
+      // Set initial brightness at min noise value
       gridNode.brightnessPercent =
         Math.max(minDesiredNoiseBrightness, brightnessPercentMin) + 0.5;
 
@@ -96,6 +96,8 @@ export function updateGridNodes() {
       gridElement.appendChild(gridNode.element);
     }
   }
+
+  console.log(`hNodes: ${hNodeCount}, vNodes: ${vNodeCount}`);
 }
 
 export function initLoop() {
