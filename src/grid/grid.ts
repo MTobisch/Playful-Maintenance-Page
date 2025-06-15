@@ -4,12 +4,22 @@ import { GridNoiseController } from "./noise/gridNoiseController";
 import { GridShockwavesController } from "./shockwaves/gridShockwavesController";
 import { iTickable } from "./iTickable";
 
-const gridElement = document.querySelector(".grid")! as HTMLElement;
-gridElement.classList.add(css.grid);
+// Initialize canvas
+const gridCanvas = document.querySelector(".grid")! as HTMLCanvasElement;
+gridCanvas.classList.add(css.grid);
+gridCanvas.width = window.innerWidth;
+gridCanvas.height = window.innerHeight;
+
+window.addEventListener("resize", (event) => {
+  gridCanvas.width = window.innerWidth;
+  gridCanvas.height = window.innerHeight;
+});
+
+const ctx = gridCanvas.getContext("2d")!;
 
 const components: iTickable[] = [
-  new GridNodesController(gridElement),
-  new GridShockwavesController(gridElement),
+  new GridNodesController(gridCanvas, ctx),
+  new GridShockwavesController(gridCanvas),
   new GridNoiseController(),
 ];
 

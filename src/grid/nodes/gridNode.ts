@@ -8,26 +8,17 @@ export const velocityMin = -10;
 export const velocityMax = 10;
 
 export class GridNode implements iTickable {
-  element: HTMLElement;
   brightnessPercent = brightnessPercentMin;
   velocity = 0;
 
   constructor(
+    public ctx: CanvasRenderingContext2D,
     public index: number,
     public x: number,
     public y: number,
-    width: number
+    public width: number
   ) {
-    this.element = document.createElement("div");
-    this.element.classList.add(css.node);
-    this.element.style.width = `${width}px`;
-    this.element.style.height = `${width}px`;
-
-    this.updateBrightness();
-  }
-
-  remove() {
-    this.element.remove();
+    this.tick(0);
   }
 
   tick(deltaTime: number) {
@@ -39,11 +30,14 @@ export class GridNode implements iTickable {
     if (this.brightnessPercent < brightnessPercentMin) {
       this.brightnessPercent = brightnessPercentMin;
     }
-    this.updateBrightness();
-  }
 
-  updateBrightness() {
-    this.element.style.opacity = (this.brightnessPercent / 100).toString();
+    // Clear previous rect on each tick
+    this.ctx.clearRect(this.x, this.y, this.width, this.width);
+
+    // Draw new rect at current brightness
+    this.ctx.fillStyle = `rgba(255, 255, 255)`;
+    this.ctx.globalAlpha = this.brightnessPercent / 100;
+    this.ctx.fillRect(this.x, this.y, this.width, this.width);
   }
 
   addVelocity(value: number) {

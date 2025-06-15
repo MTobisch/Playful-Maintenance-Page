@@ -4,10 +4,14 @@ import { iTickable } from "../iTickable";
 import { createSumTrigger, SumTrigger } from "../utils";
 
 export let currentNodes: GridNode[] = [];
+
 let trigger: SumTrigger;
 
 export class GridNodesController implements iTickable {
-  constructor(public gridElement: HTMLElement) {
+  constructor(
+    public gridCanvas: HTMLCanvasElement,
+    public ctx: CanvasRenderingContext2D
+  ) {
     this.updateGridNodes();
 
     window.addEventListener("resize", (event) => {
@@ -27,7 +31,6 @@ export class GridNodesController implements iTickable {
 
   updateGridNodes() {
     // Clear grid
-    currentNodes.forEach((node) => node.remove());
     currentNodes = [];
 
     // Calculate nr of nodes for screen resolution
@@ -38,14 +41,10 @@ export class GridNodesController implements iTickable {
     const hNodeCount = Math.floor(width / (nodeGap + nodeWidth));
     const vNodeCount = Math.floor(height / (nodeGap + nodeWidth));
 
-    this.gridElement.style.gridTemplateColumns = `repeat(${hNodeCount}, 1fr)`;
-    this.gridElement.style.gridTemplateRows = `repeat(${vNodeCount}, 1fr)`;
-    this.gridElement.style.gap = `${nodeGap}px`;
-    this.gridElement.style.padding = `${nodeGap}px`;
-
     for (let rowIndex = 0; rowIndex < vNodeCount; rowIndex++) {
       for (let columnIndex = 0; columnIndex < hNodeCount; columnIndex++) {
         const gridNode = new GridNode(
+          this.ctx,
           rowIndex * hNodeCount + columnIndex,
           nodeGap + columnIndex * (nodeWidth + nodeGap),
           nodeGap + rowIndex * (nodeWidth + nodeGap),
@@ -57,7 +56,6 @@ export class GridNodesController implements iTickable {
           Math.max(minDesiredNoiseBrightness, brightnessPercentMin) + 0.5;
 
         currentNodes.push(gridNode);
-        this.gridElement.appendChild(gridNode.element);
       }
     }
   }
